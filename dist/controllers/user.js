@@ -14,8 +14,9 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const passport_1 = __importDefault(require("passport"));
 const ResponseData_1 = __importDefault(require("../models/ResponseData"));
-const database_1 = __importDefault(require("../database"));
+const User_1 = __importDefault(require("../models/User"));
 require("../config/passport");
+const errorCodes_1 = __importDefault(require("../constants/errorCodes"));
 exports.postRegister = (req, res, next) => __awaiter(this, void 0, void 0, function* () {
     req.assert("email", "Email is not valid").isEmail();
     req
@@ -25,9 +26,18 @@ exports.postRegister = (req, res, next) => __awaiter(this, void 0, void 0, funct
         .assert("confirmPassword", "Passwords do not match")
         .equals(req.body.password);
     req.sanitize("email").normalizeEmail({ gmail_remove_dots: false });
+    req.assert("name", "Name cannot be blank").notEmpty();
+    req.assert("phone", "Phone cannot be blank").notEmpty();
+    req.assert("role", "Phone cannot be blank").notEmpty();
     const errors = req.validationErrors();
     if (errors) {
-        return next(new Error(errors.map((err) => err.msg)));
+        return res.status(400).json(new ResponseData_1.default({
+            success: false,
+            error: {
+                error_code: errorCodes_1.default.input_not_valid,
+                message: errors.map((err) => err.msg)
+            }
+        }));
     }
     try {
         const salt = yield bcrypt_1.default.genSalt(10);
@@ -35,21 +45,30 @@ exports.postRegister = (req, res, next) => __awaiter(this, void 0, void 0, funct
         const userData = {
             email: req.body.email,
             password: hashedPassword,
+            name: req.body.name,
+            phone: req.body.phone,
             created: new Date(),
             modified: new Date()
         };
-        const result = yield database_1.default.query("SELECT 1 FROM users WHERE email = ?", req.body.email);
+        const result = yield User_1.default.query("SELECT 1 FROM users WHERE email = ?", req.body.email);
         if (result.length === 0) {
-            yield database_1.default.query("INSERT INTO users SET ?", userData);
+            yield User_1.default.save(userData);
             return res.status(201).json(new ResponseData_1.default({
-                success: true
+                success: true,
+                payload: {
+                    profile: {
+                        email: req.body.email,
+                        name: req.body.name,
+                        phone: req.body.phone
+                    }
+                }
             }));
         }
         else {
             return res.status(400).json(new ResponseData_1.default({
                 success: false,
                 error: {
-                    error_code: 400,
+                    error_code: errorCodes_1.default.email_not_exist,
                     message: `Account with email ${userData.email} already exist`
                 }
             }));
@@ -65,11 +84,17 @@ exports.postRegister = (req, res, next) => __awaiter(this, void 0, void 0, funct
  */
 exports.postLogin = (req, res, next) => {
     req.assert("email", "Email is not valid").isEmail();
-    req.assert("password", "Password cannot be blank").notEmpty();
     req.sanitize("email").normalizeEmail({ gmail_remove_dots: false });
+    req.assert("password", "Password cannot be blank").notEmpty();
     const errors = req.validationErrors();
     if (errors) {
-        next(new Error(errors.map((err) => err.msg)));
+        return res.status(400).json(new ResponseData_1.default({
+            success: false,
+            error: {
+                error_code: errorCodes_1.default.input_not_valid,
+                message: errors.map((err) => err.msg)
+            }
+        }));
     }
     passport_1.default.authenticate("local", (err, user, info) => {
         if (err) {
@@ -82,12 +107,9 @@ exports.postLogin = (req, res, next) => {
             if (err) {
                 return next(err);
             }
-            const payload = {
-                email: user.email
-            };
             return res.status(201).json(new ResponseData_1.default({
                 success: true,
-                payload
+                payload: user
             }));
         });
     })(req, res, next);

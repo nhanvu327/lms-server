@@ -15,6 +15,7 @@ import * as passportConfig from "./config/passport";
 dotenv.config({ path: `.env.${process.env.NODE_ENV || "development"}` });
 
 const app = express();
+const isProd = process.env.NODE_ENV === "production";
 
 // Express configuration
 app.set("port", process.env.PORT || 3001);
@@ -23,15 +24,19 @@ app.use(bodyParser.json());
 
 const whitelistOrigin: any = ["http://localhost:3000"];
 app.use(
-  cors({
-    origin: function(origin, next) {
-      if (whitelistOrigin.includes(origin)) {
-        next(undefined, true);
-      } else {
-        next(new Error("Not allowed by CORS"));
-      }
-    }
-  })
+  cors(
+    isProd
+      ? {
+          origin: function(origin, next) {
+            if (whitelistOrigin.includes(origin)) {
+              next(undefined, true);
+            } else {
+              next(new Error("Not allowed by CORS"));
+            }
+          }
+        }
+      : undefined
+  )
 );
 app.use(expressValidator());
 app.use(

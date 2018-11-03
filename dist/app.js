@@ -23,21 +23,24 @@ const ResponseData_1 = __importDefault(require("./models/ResponseData"));
 const userController = __importStar(require("./controllers/user"));
 dotenv_1.default.config({ path: `.env.${process.env.NODE_ENV || "development"}` });
 const app = express_1.default();
+const isProd = process.env.NODE_ENV === "production";
 // Express configuration
 app.set("port", process.env.PORT || 3001);
 app.use(compression_1.default());
 app.use(body_parser_1.default.json());
 const whitelistOrigin = ["http://localhost:3000"];
-app.use(cors_1.default({
-    origin: function (origin, next) {
-        if (whitelistOrigin.includes(origin)) {
-            next(undefined, true);
-        }
-        else {
-            next(new Error("Not allowed by CORS"));
+app.use(cors_1.default(isProd
+    ? {
+        origin: function (origin, next) {
+            if (whitelistOrigin.includes(origin)) {
+                next(undefined, true);
+            }
+            else {
+                next(new Error("Not allowed by CORS"));
+            }
         }
     }
-}));
+    : undefined));
 app.use(express_validator_1.default());
 app.use(express_session_1.default({
     resave: true,

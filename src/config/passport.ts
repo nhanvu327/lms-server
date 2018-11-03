@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import passport from "passport";
 import bcrypt from "bcrypt";
 import passportLocal from "passport-local";
-import pool from "../database";
+import User from "../models/User";
 
 passport.serializeUser<any, any>((user, done) => {
   done(undefined, user.id);
@@ -10,8 +10,8 @@ passport.serializeUser<any, any>((user, done) => {
 
 passport.deserializeUser(async (id, done) => {
   try {
-    const user: any = await pool.query("SELECT * FROM users WHERE id = ?", id);
-    done(undefined, user[0]);
+    const user: any = await User.getProfile("SELECT * FROM users WHERE id = ?", id);
+    done(undefined, user);
   } catch (err) {
     done(err);
   }
@@ -42,7 +42,7 @@ passport.use(
     done
   ) {
     try {
-      const user: any = await pool.query(
+      const user: any = await User.query(
         "SELECT * FROM users WHERE email = ?",
         email
       );
@@ -60,7 +60,7 @@ passport.use(
             return done(undefined, user[0]);
           }
           return done(undefined, false, {
-            message: "Invalid email or password."
+            message: "Invalid password."
           });
         }
       );

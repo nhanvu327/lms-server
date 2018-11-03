@@ -1,24 +1,12 @@
-import bcrypt from "bcrypt";
+import pool from "../database";
+import { Query } from "mysql";
 
 export type UserModel = {
-  email: string;
-  // password: string;
-  // passwordResetToken: string;
-  // passwordResetExpires: Date;
-
-  // facebook: string;
-  // tokens: AuthToken[];
-
-  // profile: {
-  //   name: string;
-  //   gender: string;
-  //   location: string;
-  //   website: string;
-  //   picture: string;
-  // };
-
-  // comparePassword: comparePasswordFunction;
-  // gravatar: (size: number) => string;
+  profile: {
+    email: string;
+    name: string;
+    phone: string;
+  };
 };
 
 export type AuthToken = {
@@ -26,16 +14,24 @@ export type AuthToken = {
   kind: string;
 };
 
-type comparePasswordFunction = (
-  candidatePassword: string,
-  cb: (err: any, isMatch: any) => {}
-) => void;
+class User  {
+  query(queryStatement: string, info: any) {
+    return pool.query(queryStatement, info);
+  }
 
-const comparePassword: comparePasswordFunction = function(
-  candidatePassword,
-  cb
-) {
-  bcrypt.compare(candidatePassword, this.password, (err, isMatch: boolean) => {
-    cb(err, isMatch);
-  });
-};
+  save(userData: any) {
+    return this.query("INSERT INTO users SET ?", userData);
+  }
+
+  getProfile(queryStatement: string, info: any) {
+    return (pool.query(queryStatement, info) as any).then((res: any) => ({
+      profile: {
+        email: res[0].email,
+        name: res[0].name,
+        phone: res[0].phone
+      }
+    }));
+  }
+}
+
+export default new User();

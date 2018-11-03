@@ -3,9 +3,9 @@ import bcrypt from "bcrypt";
 import passport from "passport";
 import { IVerifyOptions } from "passport-local";
 import ResponseData from "../models/ResponseData";
-import { UserModel } from "../models/User";
-import pool from "../database";
+import User from "../models/User";
 import "../config/passport";
+import errorCodes from "../constants/errorCodes";
 
 export const postRegister = async (
   req: Request,
@@ -20,10 +20,22 @@ export const postRegister = async (
     .assert("confirmPassword", "Passwords do not match")
     .equals(req.body.password);
   req.sanitize("email").normalizeEmail({ gmail_remove_dots: false });
+  req.assert("name", "Name cannot be blank").notEmpty();
+  req.assert("phone", "Phone cannot be blank").notEmpty();
+  req.assert("role", "Phone cannot be blank").notEmpty();
+
   const errors: any = req.validationErrors();
 
   if (errors) {
-    return next(new Error(errors.map((err: any) => err.msg)));
+    return res.status(400).json(
+      new ResponseData({
+        success: false,
+        error: {
+          error_code: errorCodes.input_not_valid,
+          message: errors.map((err: any) => err.msg)
+        }
+      })
+    );
   }
 
   try {
@@ -32,15 +44,27 @@ export const postRegister = async (
     const userData = {
       email: req.body.email,
       password: hashedPassword,
+      name: req.body.name,
+      phone: req.body.phone,
       created: new Date(),
       modified: new Date()
     };
-    const result: any = await pool.query("SELECT 1 FROM users WHERE email = ?", req.body.email);
+    const result: any = await User.query(
+      "SELECT 1 FROM users WHERE email = ?",
+      req.body.email
+    );
     if (result.length === 0) {
-      await pool.query("INSERT INTO users SET ?", userData);
+      await User.save(userData);
       return res.status(201).json(
         new ResponseData({
-          success: true
+          success: true,
+          payload: {
+            profile: {
+              email: req.body.email,
+              name: req.body.name,
+              phone: req.body.phone
+            }
+          }
         })
       );
     } else {
@@ -48,7 +72,7 @@ export const postRegister = async (
         new ResponseData({
           success: false,
           error: {
-            error_code: 400,
+            error_code: errorCodes.email_not_exist,
             message: `Account with email ${userData.email} already exist`
           }
         })
@@ -65,13 +89,21 @@ export const postRegister = async (
  */
 export let postLogin = (req: Request, res: Response, next: NextFunction) => {
   req.assert("email", "Email is not valid").isEmail();
-  req.assert("password", "Password cannot be blank").notEmpty();
   req.sanitize("email").normalizeEmail({ gmail_remove_dots: false });
+  req.assert("password", "Password cannot be blank").notEmpty();
 
   const errors = req.validationErrors();
 
   if (errors) {
-    next(new Error(errors.map((err: any) => err.msg)));
+    return res.status(400).json(
+      new ResponseData({
+        success: false,
+        error: {
+          error_code: errorCodes.input_not_valid,
+          message: errors.map((err: any) => err.msg)
+        }
+      })
+    );
   }
 
   passport.authenticate(
@@ -87,13 +119,10 @@ export let postLogin = (req: Request, res: Response, next: NextFunction) => {
         if (err) {
           return next(err);
         }
-        const payload: UserModel = {
-          email: user.email
-        };
         return res.status(201).json(
           new ResponseData({
             success: true,
-            payload
+            payload: user
           })
         );
       });

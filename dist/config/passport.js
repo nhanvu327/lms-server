@@ -14,14 +14,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const passport_1 = __importDefault(require("passport"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const passport_local_1 = __importDefault(require("passport-local"));
-const database_1 = __importDefault(require("../database"));
+const User_1 = __importDefault(require("../models/User"));
 passport_1.default.serializeUser((user, done) => {
     done(undefined, user.id);
 });
 passport_1.default.deserializeUser((id, done) => __awaiter(this, void 0, void 0, function* () {
     try {
-        const user = yield database_1.default.query("SELECT * FROM users WHERE id = ?", id);
-        done(undefined, user[0]);
+        const user = yield User_1.default.getProfile("SELECT * FROM users WHERE id = ?", id);
+        done(undefined, user);
     }
     catch (err) {
         done(err);
@@ -42,7 +42,7 @@ const LocalStrategy = passport_local_1.default.Strategy;
 passport_1.default.use(new LocalStrategy({ usernameField: "email" }, function (email, password, done) {
     return __awaiter(this, void 0, void 0, function* () {
         try {
-            const user = yield database_1.default.query("SELECT * FROM users WHERE email = ?", email);
+            const user = yield User_1.default.query("SELECT * FROM users WHERE email = ?", email);
             if (!user.length) {
                 return done(undefined, false, { message: `Email ${email} not found.` });
             }
@@ -54,7 +54,7 @@ passport_1.default.use(new LocalStrategy({ usernameField: "email" }, function (e
                     return done(undefined, user[0]);
                 }
                 return done(undefined, false, {
-                    message: "Invalid email or password."
+                    message: "Invalid password."
                 });
             });
         }
