@@ -83,11 +83,11 @@ exports.postLogin = (req, res, next) => {
                 return next(err);
             }
             const payload = {
-                email: user.email,
+                email: user.email
             };
             return res.status(201).json(new ResponseData_1.default({
                 success: true,
-                payload: user
+                payload
             }));
         });
     })(req, res, next);

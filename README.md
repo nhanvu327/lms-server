@@ -5,6 +5,7 @@ NODEJS backend server for LMS project
 ## Installation
 
 ```bash
+yarn install
 yarn build
 yarn start
 ```

@@ -18,6 +18,7 @@ const path_1 = __importDefault(require("path"));
 const express_session_1 = __importDefault(require("express-session"));
 const dotenv_1 = __importDefault(require("dotenv"));
 const passport_1 = __importDefault(require("passport"));
+const cors_1 = __importDefault(require("cors"));
 const ResponseData_1 = __importDefault(require("./models/ResponseData"));
 const userController = __importStar(require("./controllers/user"));
 dotenv_1.default.config({ path: `.env.${process.env.NODE_ENV || "development"}` });
@@ -26,7 +27,17 @@ const app = express_1.default();
 app.set("port", process.env.PORT || 3001);
 app.use(compression_1.default());
 app.use(body_parser_1.default.json());
-app.use(body_parser_1.default.urlencoded({ extended: true }));
+const whitelistOrigin = ["http://localhost:3000"];
+app.use(cors_1.default({
+    origin: function (origin, callback) {
+        if (whitelistOrigin.indexOf(origin) !== -1) {
+            callback(undefined, true);
+        }
+        else {
+            callback(new Error("Not allowed by CORS"));
+        }
+    }
+}));
 app.use(express_validator_1.default());
 app.use(express_session_1.default({
     resave: true,

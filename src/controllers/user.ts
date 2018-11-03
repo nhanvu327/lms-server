@@ -88,13 +88,12 @@ export let postLogin = (req: Request, res: Response, next: NextFunction) => {
           return next(err);
         }
         const payload: UserModel = {
-          email: user.email,
-
-        }  ;
+          email: user.email
+        };
         return res.status(201).json(
           new ResponseData({
             success: true,
-            payload: user
+            payload
           })
         );
       });

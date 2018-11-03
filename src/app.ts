@@ -6,6 +6,7 @@ import path from "path";
 import session from "express-session";
 import dotenv from "dotenv";
 import passport from "passport";
+import cors from "cors";
 
 import ResponseData from "./models/ResponseData";
 import * as userController from "./controllers/user";
@@ -19,7 +20,19 @@ const app = express();
 app.set("port", process.env.PORT || 3001);
 app.use(compression());
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+
+const whitelistOrigin = ["http://localhost:3000"];
+app.use(
+  cors({
+    origin: function(origin, callback) {
+      if (whitelistOrigin.indexOf(origin) !== -1) {
+        callback(undefined, true);
+      } else {
+        callback(new Error("Not allowed by CORS"));
+      }
+    }
+  })
+);
 app.use(expressValidator());
 app.use(
   session({
