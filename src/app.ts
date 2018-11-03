@@ -21,14 +21,14 @@ app.set("port", process.env.PORT || 3001);
 app.use(compression());
 app.use(bodyParser.json());
 
-const whitelistOrigin = ["http://localhost:3000"];
+const whitelistOrigin: any = ["http://localhost:3000"];
 app.use(
   cors({
-    origin: function(origin, callback) {
-      if (whitelistOrigin.indexOf(origin) !== -1) {
-        callback(undefined, true);
+    origin: function(origin, next) {
+      if (whitelistOrigin.includes(origin)) {
+        next(undefined, true);
       } else {
-        callback(new Error("Not allowed by CORS"));
+        next(new Error("Not allowed by CORS"));
       }
     }
   })
