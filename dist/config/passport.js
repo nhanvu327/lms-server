@@ -14,13 +14,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 const passport_1 = __importDefault(require("passport"));
 const bcrypt_1 = __importDefault(require("bcrypt"));
 const passport_local_1 = __importDefault(require("passport-local"));
+const errorCodes_1 = __importDefault(require("../constants/errorCodes"));
 const User_1 = __importDefault(require("../models/User"));
 passport_1.default.serializeUser((user, done) => {
     done(undefined, user.id);
 });
 passport_1.default.deserializeUser((id, done) => __awaiter(this, void 0, void 0, function* () {
     try {
-        const user = yield User_1.default.getProfile("SELECT * FROM users WHERE id = ?", id);
+        const user = yield User_1.default.queryProfile("SELECT * FROM users WHERE id = ?", id);
         done(undefined, user);
     }
     catch (err) {
@@ -44,7 +45,10 @@ passport_1.default.use(new LocalStrategy({ usernameField: "email" }, function (e
         try {
             const user = yield User_1.default.query("SELECT * FROM users WHERE email = ?", email);
             if (!user.length) {
-                return done(undefined, false, { message: `Email ${email} not found.` });
+                return done(undefined, false, {
+                    message: `Email ${email} not exist.`,
+                    error_code: errorCodes_1.default.email_not_exist
+                });
             }
             bcrypt_1.default.compare(password, user[0].password, (err, isMatch) => {
                 if (err) {
@@ -54,7 +58,8 @@ passport_1.default.use(new LocalStrategy({ usernameField: "email" }, function (e
                     return done(undefined, user[0]);
                 }
                 return done(undefined, false, {
-                    message: "Invalid password."
+                    message: "Password not correct.",
+                    error_code: errorCodes_1.default.password_not_correct
                 });
             });
         }

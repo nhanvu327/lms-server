@@ -1,6 +1,8 @@
 enum errorCodes {
-  email_not_exist = 100,
-  input_not_valid = 101
+  email_already_exist = 100,
+  email_not_exist,
+  password_not_correct,
+  input_not_valid
 }
 
 export default errorCodes;

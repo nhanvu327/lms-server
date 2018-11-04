@@ -1,5 +1,4 @@
 import pool from "../database";
-import { Query } from "mysql";
 
 export type UserModel = {
   profile: {
@@ -9,12 +8,23 @@ export type UserModel = {
   };
 };
 
+export type UserFromDB = {
+  id: number;
+  email: string;
+  name: string;
+  phone: string;
+  role: Number;
+  password: string;
+  created: Date;
+  modified: Date;
+};
+
 export type AuthToken = {
   accessToken: string;
   kind: string;
 };
 
-class User  {
+class User {
   query(queryStatement: string, info: any) {
     return pool.query(queryStatement, info);
   }
@@ -23,14 +33,22 @@ class User  {
     return this.query("INSERT INTO users SET ?", userData);
   }
 
-  getProfile(queryStatement: string, info: any) {
-    return (pool.query(queryStatement, info) as any).then((res: any) => ({
+  queryProfile(queryStatement: string, info: any) {
+    return (pool.query(queryStatement, info) as any).then((res: any) =>
+      this.getProfile(res[0])
+    );
+  }
+
+  getProfile(data: UserFromDB) {
+    return {
       profile: {
-        email: res[0].email,
-        name: res[0].name,
-        phone: res[0].phone
+        id: data.id,
+        email: data.email,
+        name: data.name,
+        phone: data.phone,
+        role: data.role
       }
-    }));
+    };
   }
 }
 

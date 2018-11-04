@@ -28,7 +28,7 @@ exports.postRegister = (req, res, next) => __awaiter(this, void 0, void 0, funct
     req.sanitize("email").normalizeEmail({ gmail_remove_dots: false });
     req.assert("name", "Name cannot be blank").notEmpty();
     req.assert("phone", "Phone cannot be blank").notEmpty();
-    req.assert("role", "Phone cannot be blank").notEmpty();
+    req.assert("role", "Role cannot be blank").notEmpty();
     const errors = req.validationErrors();
     if (errors) {
         return res.status(400).json(new ResponseData_1.default({
@@ -47,6 +47,7 @@ exports.postRegister = (req, res, next) => __awaiter(this, void 0, void 0, funct
             password: hashedPassword,
             name: req.body.name,
             phone: req.body.phone,
+            role: req.body.role,
             created: new Date(),
             modified: new Date()
         };
@@ -68,7 +69,7 @@ exports.postRegister = (req, res, next) => __awaiter(this, void 0, void 0, funct
             return res.status(400).json(new ResponseData_1.default({
                 success: false,
                 error: {
-                    error_code: errorCodes_1.default.email_not_exist,
+                    error_code: errorCodes_1.default.email_already_exist,
                     message: `Account with email ${userData.email} already exist`
                 }
             }));
@@ -101,7 +102,13 @@ exports.postLogin = (req, res, next) => {
             return next(err);
         }
         if (!user) {
-            return next(new Error(info.message));
+            return res.status(400).json(new ResponseData_1.default({
+                success: false,
+                error: {
+                    error_code: info.error_code,
+                    message: info.message
+                }
+            }));
         }
         req.logIn(user, err => {
             if (err) {
@@ -109,7 +116,7 @@ exports.postLogin = (req, res, next) => {
             }
             return res.status(201).json(new ResponseData_1.default({
                 success: true,
-                payload: user
+                payload: User_1.default.getProfile(user)
             }));
         });
     })(req, res, next);

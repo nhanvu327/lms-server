@@ -11,14 +11,19 @@ class User {
     save(userData) {
         return this.query("INSERT INTO users SET ?", userData);
     }
-    getProfile(queryStatement, info) {
-        return database_1.default.query(queryStatement, info).then((res) => ({
+    queryProfile(queryStatement, info) {
+        return database_1.default.query(queryStatement, info).then((res) => this.getProfile(res[0]));
+    }
+    getProfile(data) {
+        return {
             profile: {
-                email: res[0].email,
-                name: res[0].name,
-                phone: res[0].phone
+                id: data.id,
+                email: data.email,
+                name: data.name,
+                phone: data.phone,
+                role: data.role
             }
-        }));
+        };
     }
 }
 exports.default = new User();

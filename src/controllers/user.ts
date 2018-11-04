@@ -22,7 +22,7 @@ export const postRegister = async (
   req.sanitize("email").normalizeEmail({ gmail_remove_dots: false });
   req.assert("name", "Name cannot be blank").notEmpty();
   req.assert("phone", "Phone cannot be blank").notEmpty();
-  req.assert("role", "Phone cannot be blank").notEmpty();
+  req.assert("role", "Role cannot be blank").notEmpty();
 
   const errors: any = req.validationErrors();
 
@@ -46,6 +46,7 @@ export const postRegister = async (
       password: hashedPassword,
       name: req.body.name,
       phone: req.body.phone,
+      role: req.body.role,
       created: new Date(),
       modified: new Date()
     };
@@ -72,7 +73,7 @@ export const postRegister = async (
         new ResponseData({
           success: false,
           error: {
-            error_code: errorCodes.email_not_exist,
+            error_code: errorCodes.email_already_exist,
             message: `Account with email ${userData.email} already exist`
           }
         })
@@ -108,12 +109,20 @@ export let postLogin = (req: Request, res: Response, next: NextFunction) => {
 
   passport.authenticate(
     "local",
-    (err: Error, user: any, info: IVerifyOptions) => {
+    (err: Error, user: any, info: IVerifyOptions & { error_code: Number }) => {
       if (err) {
         return next(err);
       }
       if (!user) {
-        return next(new Error(info.message));
+        return res.status(400).json(
+          new ResponseData({
+            success: false,
+            error: {
+              error_code: info.error_code,
+              message: info.message
+            }
+          })
+        );
       }
       req.logIn(user, err => {
         if (err) {
@@ -122,7 +131,7 @@ export let postLogin = (req: Request, res: Response, next: NextFunction) => {
         return res.status(201).json(
           new ResponseData({
             success: true,
-            payload: user
+            payload: User.getProfile(user)
           })
         );
       });

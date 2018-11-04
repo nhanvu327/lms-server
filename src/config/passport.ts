@@ -2,6 +2,7 @@ import { Request, Response, NextFunction } from "express";
 import passport from "passport";
 import bcrypt from "bcrypt";
 import passportLocal from "passport-local";
+import errorCodes from "../constants/errorCodes";
 import User from "../models/User";
 
 passport.serializeUser<any, any>((user, done) => {
@@ -10,7 +11,10 @@ passport.serializeUser<any, any>((user, done) => {
 
 passport.deserializeUser(async (id, done) => {
   try {
-    const user: any = await User.getProfile("SELECT * FROM users WHERE id = ?", id);
+    const user: any = await User.queryProfile(
+      "SELECT * FROM users WHERE id = ?",
+      id
+    );
     done(undefined, user);
   } catch (err) {
     done(err);
@@ -39,7 +43,7 @@ passport.use(
   new LocalStrategy({ usernameField: "email" }, async function(
     email,
     password,
-    done
+    done: any
   ) {
     try {
       const user: any = await User.query(
@@ -47,7 +51,10 @@ passport.use(
         email
       );
       if (!user.length) {
-        return done(undefined, false, { message: `Email ${email} not found.` });
+        return done(undefined, false, {
+          message: `Email ${email} not exist.`,
+          error_code: errorCodes.email_not_exist
+        });
       }
       bcrypt.compare(
         password,
@@ -60,7 +67,8 @@ passport.use(
             return done(undefined, user[0]);
           }
           return done(undefined, false, {
-            message: "Invalid password."
+            message: "Password not correct.",
+            error_code: errorCodes.password_not_correct
           });
         }
       );
