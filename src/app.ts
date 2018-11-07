@@ -33,9 +33,13 @@ app.use(
             } else {
               next(new Error("Not allowed by CORS"));
             }
-          }
+          },
+          credentials: true
         }
-      : undefined
+      : {
+          origin: true,
+          credentials: true
+        }
   )
 );
 app.use(expressValidator());
@@ -58,6 +62,8 @@ app.use(
 app.post("/register", userController.postRegister);
 
 app.post("/login", userController.postLogin);
+
+app.get("/profile", passportConfig.isAuthenticated, userController.getProfile);
 
 app.use((err: any, req: Request, res: Response, next: NextFunction) => {
   res.status(500).send(

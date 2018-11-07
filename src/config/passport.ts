@@ -4,6 +4,7 @@ import bcrypt from "bcrypt";
 import passportLocal from "passport-local";
 import errorCodes from "../constants/errorCodes";
 import User from "../models/User";
+import ResponseData from "../models/ResponseData";
 
 passport.serializeUser<any, any>((user, done) => {
   done(undefined, user.id);
@@ -24,7 +25,7 @@ passport.deserializeUser(async (id, done) => {
 /**
  * Login Required middleware.
  */
-export let isAuthenticated = (
+export const isAuthenticated = (
   req: Request,
   res: Response,
   next: NextFunction
@@ -32,6 +33,15 @@ export let isAuthenticated = (
   if (req.isAuthenticated()) {
     return next();
   }
+  return res.status(401).send(
+    new ResponseData({
+      success: false,
+      error: {
+        message: "Unauthorized",
+        error_code: 401
+      }
+    })
+  );
 };
 
 const LocalStrategy = passportLocal.Strategy;

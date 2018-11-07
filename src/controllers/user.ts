@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import bcrypt from "bcrypt";
-import passport from "passport";
+import passport, { PassportStatic } from "passport";
 import { IVerifyOptions } from "passport-local";
 import ResponseData from "../models/ResponseData";
 import User from "../models/User";
@@ -128,7 +128,7 @@ export let postLogin = (req: Request, res: Response, next: NextFunction) => {
         if (err) {
           return next(err);
         }
-        return res.status(201).json(
+        return res.status(200).json(
           new ResponseData({
             success: true,
             payload: User.getProfile(user)
@@ -137,4 +137,16 @@ export let postLogin = (req: Request, res: Response, next: NextFunction) => {
       });
     }
   )(req, res, next);
+};
+
+/**
+ * GET /profile
+ */
+export const getProfile = (req: Request, res: Response, next: NextFunction) => {
+  return res.status(200).json(
+    new ResponseData({
+      success: true,
+      payload: req.user
+    })
+  );
 };
