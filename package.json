@@ -5,6 +5,7 @@
   "author": "Nhan Vu <nhanvu327@gmail.com>",
   "scripts": {
     "start": "NODE_ENV=development npm run serve",
+    "postinstall": "npm run build-ts",
     "start:staging": "NODE_ENV=staging npm run serve",
     "start:prod": "NODE_ENV=production npm run serve",
     "build": "npm run build-ts && npm run tslint",
