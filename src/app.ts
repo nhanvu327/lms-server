@@ -21,7 +21,7 @@ app.set("port", process.env.PORT || 3001);
 app.use(compression());
 app.use(bodyParser.json());
 
-const whitelistOrigin: any = ["http://localhost:3000"];
+const whitelistOrigin: any = ["http://localhost:3000", "https://lms-server-staging.herokuapp.com"];
 app.use(
   cors(
     isProd
