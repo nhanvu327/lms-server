@@ -21,25 +21,11 @@ app.set("port", process.env.PORT || 3001);
 app.use(compression());
 app.use(bodyParser.json());
 
-const whitelistOrigin: any = ["http://localhost:3000", "https://lms-server-staging.herokuapp.com"];
 app.use(
-  cors(
-    isProd
-      ? {
-          origin: function(origin, next) {
-            if (whitelistOrigin.includes(origin)) {
-              next(undefined, true);
-            } else {
-              next(new Error("Not allowed by CORS"));
-            }
-          },
-          credentials: true
-        }
-      : {
-          origin: true,
-          credentials: true
-        }
-  )
+  cors({
+    origin: true,
+    credentials: true
+  })
 );
 app.use(expressValidator());
 app.use(passport.initialize());
