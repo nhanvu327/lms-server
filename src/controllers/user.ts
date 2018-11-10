@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import bcrypt from "bcrypt";
-import passport, { PassportStatic } from "passport";
+import passport from "passport";
+import jwt from "jsonwebtoken";
 import { IVerifyOptions } from "passport-local";
 import ResponseData from "../models/ResponseData";
 import User from "../models/User";
@@ -109,6 +110,7 @@ export let postLogin = (req: Request, res: Response, next: NextFunction) => {
 
   passport.authenticate(
     "local",
+    { session: false },
     (err: Error, user: any, info: IVerifyOptions & { error_code: Number }) => {
       if (err) {
         return next(err);
@@ -124,14 +126,27 @@ export let postLogin = (req: Request, res: Response, next: NextFunction) => {
           })
         );
       }
-      req.logIn(user, err => {
+      req.logIn(user, { session: false }, err => {
         if (err) {
           return next(err);
         }
+        const token = jwt.sign(
+          {
+            id: user.id,
+            email: user.email
+          },
+          process.env.JWT_SECRET,
+          {
+            expiresIn: "8h"
+          }
+        );
         return res.status(200).json(
           new ResponseData({
             success: true,
-            payload: User.getProfile(user)
+            payload: {
+              ...User.getProfile(user),
+              token
+            }
           })
         );
       });
@@ -142,11 +157,19 @@ export let postLogin = (req: Request, res: Response, next: NextFunction) => {
 /**
  * GET /profile
  */
-export const getProfile = (req: Request, res: Response, next: NextFunction) => {
+export const getProfile = async (
+  req: Request,
+  res: Response,
+  next: NextFunction
+) => {
+  const payload = await User.queryProfile(
+    "SELECT * FROM users WHERE id = ?",
+    req.user.id
+  );
   return res.status(200).json(
     new ResponseData({
       success: true,
-      payload: req.user
+      payload
     })
   );
 };

@@ -26,7 +26,8 @@ const server = https.createServer(options, app).listen(app.get("port"), () => {
 
 const peerserver = ExpressPeerServer(server, {
   debug: true,
-  port: 3001
+  port: 3001,
+  allow_discovery: true
 });
 
 app.use("/peerjs", peerserver);

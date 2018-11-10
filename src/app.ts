@@ -3,16 +3,15 @@ import compression from "compression";
 import bodyParser from "body-parser";
 import expressValidator from "express-validator";
 import path from "path";
-import session from "express-session";
 import dotenv from "dotenv";
 import passport from "passport";
 import cors from "cors";
 
+dotenv.config({ path: `.env.${process.env.NODE_ENV || "development"}` });
+
+import * as passportConfig from "./config/passport";
 import ResponseData from "./models/ResponseData";
 import * as userController from "./controllers/user";
-import * as passportConfig from "./config/passport";
-
-dotenv.config({ path: `.env.${process.env.NODE_ENV || "development"}` });
 
 const app = express();
 const isProd = process.env.NODE_ENV === "production";
@@ -43,15 +42,7 @@ app.use(
   )
 );
 app.use(expressValidator());
-app.use(
-  session({
-    resave: true,
-    saveUninitialized: true,
-    secret: "nhanvu"
-  })
-);
 app.use(passport.initialize());
-app.use(passport.session());
 app.use(
   express.static(path.join(__dirname, "public"), { maxAge: 31557600000 })
 );
