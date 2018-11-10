@@ -4,13 +4,14 @@
   "version": "1.0.0",
   "author": "Nhan Vu <nhanvu327@gmail.com>",
   "scripts": {
-    "start": "NODE_ENV=development npm run serve",
+    "start": "npm run serve",
     "postinstall": "npm run build-ts",
+    "start:dev": "NODE_ENV=development npm run serve",
     "start:staging": "NODE_ENV=staging npm run serve",
     "start:prod": "NODE_ENV=production npm run serve",
     "build": "npm run build-ts && npm run tslint",
     "serve": "node dist/server.js",
-    "watch-node": "nodemon dist/server.js",
+    "watch-node": "NODE_ENV=development nodemon dist/server.js",
     "watch": "concurrently -k -p \"[{name}]\" -n \"Sass,TypeScript,Node\" -c \"yellow.bold,cyan.bold,green.bold\" \"npm run watch-sass\" \"npm run watch-ts\" \"npm run watch-node\"",
     "test": "jest --forceExit --coverage --verbose",
     "watch-test": "npm run test -- --watchAll",
@@ -25,8 +26,6 @@
     "watch-debug": "concurrently -k -p \"[{name}]\" -n \"Sass,TypeScript,Node\" -c \"yellow.bold,cyan.bold,green.bold\" \"npm run watch-sass\" \"npm run watch-ts\" \"npm run serve-debug\""
   },
   "dependencies": {
-    "@types/express-validator": "^3.0.0",
-    "@types/mysql": "^2.15.5",
     "bcrypt": "^3.0.2",
     "body-parser": "^1.18.3",
     "compression": "^1.7.3",
@@ -42,7 +41,11 @@
     "passport-local": "^1.0.0",
     "peer": "^0.2.10",
     "winston": "^3.1.0",
-    "ws": "^6.1.0"
+    "ws": "^6.1.0",
+    "nodemon": "^1.18.5",
+    "ts-node": "^7.0.1",
+    "tslint": "^5.11.0",
+    "typescript": "^3.1.6"
   },
   "devDependencies": {
     "@types/bcrypt": "^3.0.0",
@@ -55,10 +58,8 @@
     "@types/passport": "^0.4.7",
     "@types/passport-jwt": "^3.0.1",
     "@types/passport-local": "^1.0.33",
-    "nodemon": "^1.18.5",
-    "ts-node": "^7.0.1",
-    "tslint": "^5.11.0",
-    "typescript": "^3.1.6"
+    "@types/express-validator": "^3.0.0",
+    "@types/mysql": "^2.15.5",
   },
   "engines": {
     "node": "8.10.0"
