@@ -14,7 +14,6 @@ import ResponseData from "./models/ResponseData";
 import * as userController from "./controllers/user";
 
 const app = express();
-const isProd = process.env.NODE_ENV === "production";
 
 // Express configuration
 app.set("port", process.env.PORT || 3001);

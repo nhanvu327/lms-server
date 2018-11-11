@@ -1,5 +1,6 @@
 import app from "./app";
 import https from "https";
+import http from "http";
 import * as fs from "fs";
 import * as path from "path";
 import { ExpressPeerServer } from "peer";
@@ -17,18 +18,20 @@ const options = isDev
     }
   : undefined;
 
-const server = https.createServer(options, app).listen(app.get("port"), () => {
-  console.log(
-    "  App is running at http://localhost:%d in %s mode",
-    app.get("port"),
-    app.get("env")
-  );
-  console.log("  Press CTRL-C to stop\n");
-});
+const server = isDev
+  ? https.createServer(options, app).listen(app.get("port"), () => {
+      console.log(
+        "  App is running at http://localhost:%d in %s mode",
+        app.get("port"),
+        app.get("env")
+      );
+      console.log("  Press CTRL-C to stop\n");
+    })
+  : http.createServer(app).listen(app.get("port"));
 
 const peerserver = ExpressPeerServer(server, {
   debug: true,
-  port: 3001,
+  port: process.env.PORT,
   allow_discovery: true
 });
 
