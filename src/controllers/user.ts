@@ -3,85 +3,76 @@ import bcrypt from "bcrypt";
 import passport from "passport";
 import jwt from "jsonwebtoken";
 import { IVerifyOptions } from "passport-local";
+import { getManager } from "typeorm";
+import { validate } from "class-validator";
 import ResponseData from "../models/ResponseData";
-import User from "../models/User";
 import "../config/passport";
+import User from "../entity/User";
 import errorCodes from "../constants/errorCodes";
+import { toSecondTimestamp } from "../helpers";
 
 export const postRegister = async (
   req: Request,
   res: Response,
   next: NextFunction
 ) => {
-  req.assert("email", "Email is not valid").isEmail();
-  req
-    .assert("password", "Password must be at least 4 characters long")
-    .len({ min: 4 });
-  req
-    .assert("confirmPassword", "Passwords do not match")
-    .equals(req.body.password);
-  req.sanitize("email").normalizeEmail({ gmail_remove_dots: false });
-  req.assert("name", "Name cannot be blank").notEmpty();
-  req.assert("phone", "Phone cannot be blank").notEmpty();
-  req.assert("role", "Role cannot be blank").notEmpty();
-
-  const errors: any = req.validationErrors();
-
-  if (errors) {
-    return res.status(400).json(
-      new ResponseData({
-        success: false,
-        error: {
-          error_code: errorCodes.input_not_valid,
-          message: errors.map((err: any) => err.msg)
-        }
-      })
-    );
-  }
-
   try {
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(req.body.password, salt);
-    const userData = {
+    let newUser = new User();
+    newUser = {
       email: req.body.email,
       password: hashedPassword,
-      name: req.body.name,
-      phone: req.body.phone,
-      role: req.body.role,
-      created: new Date(),
-      modified: new Date()
+      is_active: 1,
+      created_at: toSecondTimestamp(new Date()),
+      profile: {
+        email: req.body.email,
+        name: req.body.name,
+        phone: req.body.phone,
+        role: req.body.role,
+        created_at: toSecondTimestamp(new Date())
+      }
     };
-    const result: any = await User.query(
-      "SELECT 1 FROM users WHERE email = ?",
-      req.body.email
-    );
-    if (result.length === 0) {
-      await User.save(userData);
-      return res.status(201).json(
+    const errors: any = await validate(newUser);
+    if (errors.length) {
+      return res.status(400).json(
         new ResponseData({
-          success: true,
-          payload: {
-            profile: {
-              email: req.body.email,
-              name: req.body.name,
-              phone: req.body.phone
-            }
+          success: false,
+          error: {
+            error_code: errorCodes.input_not_valid,
+            message: errors.map((err: any) => err.msg)
           }
         })
       );
+    }
+    const userRepository = getManager().getRepository(User);
+    const result: any = await userRepository.findOne({
+      email: req.body.email
+    });
+    if (!result) {
+      await userRepository.save(newUser);
+      return next();
+      // return res.status(201).json(
+      //   new ResponseData({
+      //     success: true,
+      //     payload: {
+      //       profile: newUser.profile
+      //     }
+      //   })
+      // );
     } else {
       return res.status(400).json(
         new ResponseData({
           success: false,
           error: {
             error_code: errorCodes.email_already_exist,
-            message: `Account with email ${userData.email} already exist`
+            message: `Account with email ${req.body.email} already exist`
           }
         })
       );
     }
   } catch (e) {
-    next(e);
+    return next(e);
   }
 };
 
@@ -90,24 +81,6 @@ export const postRegister = async (
  * Sign in using email and password.
  */
 export let postLogin = (req: Request, res: Response, next: NextFunction) => {
-  req.assert("email", "Email is not valid").isEmail();
-  req.sanitize("email").normalizeEmail({ gmail_remove_dots: false });
-  req.assert("password", "Password cannot be blank").notEmpty();
-
-  const errors = req.validationErrors();
-
-  if (errors) {
-    return res.status(400).json(
-      new ResponseData({
-        success: false,
-        error: {
-          error_code: errorCodes.input_not_valid,
-          message: errors.map((err: any) => err.msg)
-        }
-      })
-    );
-  }
-
   passport.authenticate(
     "local",
     { session: false },
@@ -144,7 +117,7 @@ export let postLogin = (req: Request, res: Response, next: NextFunction) => {
           new ResponseData({
             success: true,
             payload: {
-              ...User.getProfile(user),
+              profile: user.profile,
               token
             }
           })
@@ -162,10 +135,8 @@ export const getProfile = async (
   res: Response,
   next: NextFunction
 ) => {
-  const payload = await User.queryProfile(
-    "SELECT * FROM users WHERE id = ?",
-    req.user.id
-  );
+  const userRepository = getManager().getRepository(User);
+  const payload = await userRepository.findOne(req.user.id);
   return res.status(200).json(
     new ResponseData({
       success: true,

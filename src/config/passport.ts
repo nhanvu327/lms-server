@@ -3,9 +3,9 @@ import passport from "passport";
 import bcrypt from "bcrypt";
 import passportLocal from "passport-local";
 import passportJWT from "passport-jwt";
+import { getManager } from "typeorm";
 import errorCodes from "../constants/errorCodes";
-import User from "../models/User";
-import ResponseData from "../models/ResponseData";
+import User from "../entity/User";
 
 /**
  * Login Required middleware.
@@ -30,11 +30,14 @@ passport.use(
     { usernameField: "email", passwordField: "password" },
     async function(email: string, password: string, done: any) {
       try {
-        const user: any = await User.query(
-          "SELECT * FROM users WHERE email = ?",
-          email
+        const userRepository = getManager().getRepository(User);
+        const user: any = await userRepository.findOne(
+          {
+            email
+          },
+          { relations: ["profile"] }
         );
-        if (!user.length) {
+        if (!user) {
           return done(undefined, false, {
             message: `Email ${email} not exist.`,
             error_code: errorCodes.email_not_exist
@@ -42,13 +45,13 @@ passport.use(
         }
         bcrypt.compare(
           password,
-          user[0].password,
+          user.password,
           (err: any, isMatch: boolean) => {
             if (err) {
               return done(err);
             }
             if (isMatch) {
-              return done(undefined, user[0]);
+              return done(undefined, user);
             }
             return done(undefined, false, {
               message: "Password not correct.",
